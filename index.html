@@ -3,351 +3,479 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>First Aid Tech | App de primeros auxilios</title>
-<meta name="description" content="First Aid Tech es un prototipo de app de primeros auxilios hecho en MIT App Inventor: guía por zona del cuerpo, dosis según el peso y registro para el médico.">
+<title>First Aid Tech</title>
+<meta name="description" content="First Aid Tech: elige la zona afectada, da tus datos y recibe qué hacer y qué medicamento básico tomar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --kit: #0e5a43;        /* verde de botiquín */
-    --kit-deep: #0a4332;
-    --gauze: #e3eee8;      /* gasa */
-    --paper: #f7faf8;
-    --ink: #17231e;
-    --soft: #4b5d55;
-    --iodine: #a86f06;     /* yodo: avisos */
-    --iodine-bg: #fbf1d9;
-    --signal: #c7332a;     /* solo para emergencias */
-    --display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
-    --body: "Atkinson Hyperlegible", Verdana, sans-serif;
+    --fondo: #eef4fb; --tinta: #1c2733; --suave: #53616f; --linea: #c9d6e4; --blanco: #ffffff;
+    --azul: #1565c0; --rojo: #d32f2f; --rojo-bg: #fde8e6; --ambar: #9a6700; --ambar-bg: #fff4d6;
   }
-
   * { box-sizing: border-box; margin: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--body);
-    font-size: 1.125rem;
-    line-height: 1.6;
-  }
-  img { max-width: 100%; display: block; }
-  a { color: var(--kit); }
-  a:focus-visible, .btn:focus-visible {
-    outline: 3px solid var(--iodine);
-    outline-offset: 3px;
+  body { background: var(--fondo); color: var(--tinta); font-family: "Open Sans", Verdana, sans-serif; font-size: 1.125rem; line-height: 1.5; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+  h1 { font-size: clamp(1.5rem, 3.2vw, 2rem); font-weight: 600; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin: 1.6rem 0 0.6rem; }
+  h3 { font-size: 1.15rem; margin-bottom: 0.3rem; }
+  .sub { color: var(--suave); margin-bottom: 1.25rem; }
+
+  header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.7rem 1.5rem; background: var(--blanco); border-bottom: 1px solid var(--linea); }
+  .marca { font: inherit; font-weight: 700; font-size: 1.1rem; background: none; border: 0; color: var(--tinta); cursor: pointer; padding: 0.3rem 0; }
+  header div { display: flex; gap: 0.6rem; }
+  .aviso-top { background: var(--ambar-bg); font-size: 0.95rem; padding: 0.45rem 1.5rem; }
+
+  main { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+  .angosto { max-width: 44rem; }
+
+  .btn { font: inherit; font-weight: 600; border-radius: 0.5rem; padding: 0.7rem 1.2rem; cursor: pointer; border: 2px solid var(--tinta); background: var(--blanco); color: var(--tinta); text-decoration: none; display: inline-block; }
+  .btn:hover { background: #dfe9f5; }
+  .btn-azul { background: var(--azul); border-color: var(--azul); color: #fff; } .btn-azul:hover { background: #0f4f99; }
+  .btn-rojo { background: var(--rojo); border-color: var(--rojo); color: #fff; } .btn-rojo:hover { background: #b12424; }
+  .btn-grande { font-size: 1.25rem; padding: 1rem 1.5rem; }
+  .btn:disabled { opacity: 0.45; cursor: default; }
+  .fila { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+
+  /* Pantalla de zonas, como la del botiquín */
+  .inicio { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem; align-items: center; }
+  .zonas { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem 1.5rem; margin-top: 1.5rem; max-width: 30rem; }
+  .zona { font: inherit; font-weight: 600; background: var(--blanco); color: var(--tinta); border: 3px solid var(--c); border-radius: 0.5rem; padding: 0.85rem 0.75rem; cursor: pointer; min-height: 3.4rem; }
+  .zona:hover, .zona.activa { background: var(--c); color: #fff; }
+  .zona.oscura:hover, .zona.oscura.activa { color: var(--tinta); }
+  .cuerpo { width: 100%; max-width: 17rem; height: auto; justify-self: center; }
+  .parte { cursor: pointer; transition: opacity 0.15s; }
+  .cuerpo.con-activa .parte { opacity: 0.35; }
+  .cuerpo.con-activa .parte.activa { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .parte { transition: none; } }
+  @media (max-width: 44rem) {
+    .inicio { grid-template-columns: 1fr; }
+    .cuerpo { max-width: 11rem; order: -1; }
+    .zonas { max-width: none; }
   }
 
-  .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.5rem; }
-  h1, h2, h3 { font-family: var(--display); line-height: 1.08; letter-spacing: -0.01em; }
-  h2 { font-size: clamp(1.9rem, 4vw, 2.75rem); font-weight: 700; margin-bottom: 1rem; }
-  h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; }
-  .lead { max-width: 38rem; color: var(--soft); }
-  .block { padding: 5rem 0; }
+  ul.senales { background: var(--rojo-bg); border-left: 6px solid var(--rojo); border-radius: 0 0.6rem 0.6rem 0; padding: 1rem 1rem 1rem 2.2rem; }
+  ul.senales li { margin-bottom: 0.3rem; }
 
-  /* Barra superior */
-  .top {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1.25rem 0;
-  }
-  .brand {
-    display: flex; align-items: center; gap: 0.6rem;
-    font-family: var(--display); font-weight: 700; font-size: 1.15rem;
-    color: var(--ink); text-decoration: none;
-  }
-  .cross {
-    width: 1.75rem; height: 1.75rem; border-radius: 0.4rem;
-    background: var(--kit); position: relative; flex: none;
-  }
-  .cross::before, .cross::after {
-    content: ""; position: absolute; background: #fff; border-radius: 1px;
-    top: 50%; left: 50%; transform: translate(-50%, -50%);
-  }
-  .cross::before { width: 58%; height: 20%; }
-  .cross::after { width: 20%; height: 58%; }
-  .top nav { display: flex; gap: 1.5rem; }
-  .top nav a { color: var(--ink); text-decoration: none; font-size: 1rem; }
-  .top nav a:hover { text-decoration: underline; }
+  label { display: block; font-weight: 600; margin: 1rem 0 0.3rem; }
+  input[type=text], input[type=number], select { font: inherit; width: 100%; padding: 0.7rem 0.8rem; border: 2px solid var(--linea); border-radius: 0.5rem; background: var(--blanco); color: var(--tinta); }
+  .tres { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; }
+  @media (max-width: 34rem) { .tres { grid-template-columns: 1fr 1fr; } .tres > :first-child { grid-column: 1 / -1; } }
+  fieldset { border: 0; padding: 0; margin-top: 1.4rem; }
+  legend { font-weight: 600; padding: 0; margin-bottom: 0.3rem; }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; }
+  @media (max-width: 34rem) { .checks { grid-template-columns: 1fr; } }
+  .check { display: flex; gap: 0.65rem; align-items: flex-start; font-weight: 400; margin: 0; padding: 0.5rem 0; border-bottom: 1px solid var(--linea); cursor: pointer; }
+  .check input { width: 1.3rem; height: 1.3rem; margin-top: 0.15rem; flex: none; accent-color: var(--azul); }
+  .error { color: var(--rojo); font-weight: 700; margin-top: 1rem; }
+  .nota { color: var(--suave); font-size: 1rem; margin-top: 0.6rem; }
 
-  /* Inicio */
-  .hero {
-    display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 3rem;
-    align-items: stretch; padding: 2rem 0 5rem;
-  }
-  .hero-text { display: flex; flex-direction: column; justify-content: center; }
-  h1 {
-    font-size: clamp(2.6rem, 7vw, 5rem); font-weight: 700;
-    margin-bottom: 1.5rem;
-  }
-  .hero p { max-width: 32rem; color: var(--soft); font-size: 1.25rem; }
-  .actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
-  .btn {
-    display: inline-block; padding: 0.85rem 1.4rem; border-radius: 0.6rem;
-    font-weight: 700; text-decoration: none; font-size: 1.05rem;
-  }
-  .btn-main { background: var(--kit); color: #fff; }
-  .btn-main:hover { background: var(--kit-deep); }
-  .btn-plain { color: var(--ink); border: 2px solid var(--ink); }
-  .btn-plain:hover { background: var(--gauze); }
+  ol.pasos { padding-left: 1.4rem; } ol.pasos li { margin-bottom: 0.4rem; }
+  .med { background: var(--blanco); border: 3px solid var(--azul); border-radius: 0.6rem; padding: 1rem 1.2rem; margin-top: 0.8rem; }
+  .med .dosis { font-weight: 700; font-size: 1.6rem; color: var(--azul); line-height: 1.2; margin: 0.2rem 0; }
+  .med.no { border-color: var(--linea); } .med.no .dosis { color: var(--suave); font-size: 1.15rem; }
+  .caja { background: var(--ambar-bg); border-left: 6px solid var(--ambar); border-radius: 0 0.6rem 0.6rem 0; padding: 0.9rem 1.1rem; margin-top: 1.4rem; }
+  .ok { background: #dcefe0; border-radius: 0.6rem; padding: 0.8rem 1rem; margin-top: 1rem; font-weight: 600; }
 
-  .panel {
-    background: var(--kit); border-radius: 1.5rem; color: #fff;
-    padding: 2rem 2rem 1.5rem; display: flex; flex-direction: column;
-    align-items: center; justify-content: space-between; min-height: 30rem;
-  }
-  .panel svg { width: min(100%, 15rem); height: auto; }
-  .panel p { color: #d5e8df; font-size: 1rem; text-align: center; max-width: 16rem; }
-  .figure-line { stroke: #ffffff; stroke-opacity: 0.55; stroke-width: 14; stroke-linecap: round; fill: none; }
-  .figure-fill { fill: #ffffff; fill-opacity: 0.55; }
-  .dot { fill: #fff; }
-  .ring { fill: none; stroke: #fff; stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: pulse 3s ease-out infinite; }
-  @keyframes pulse {
-    0% { transform: scale(1); opacity: 0.9; }
-    70%, 100% { transform: scale(3.2); opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ring { animation: none; opacity: 0.5; transform: scale(2); }
-    html { scroll-behavior: auto; }
-  }
-
-  /* Cómo funciona */
-  .flow { background: var(--gauze); }
-  .steps {
-    list-style: none; padding: 0; margin-top: 2.5rem;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
-    counter-reset: paso;
-  }
-  .steps li { counter-increment: paso; border-top: 3px solid var(--kit); padding-top: 1rem; }
-  .steps li::before {
-    content: counter(paso);
-    font-family: var(--display); font-weight: 700; font-size: 2.5rem;
-    color: var(--kit); display: block; line-height: 1; margin-bottom: 0.75rem;
-  }
-  .steps p { color: var(--soft); font-size: 1.05rem; }
-
-  /* Por qué */
-  .why { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
-  .why p + p { margin-top: 1rem; }
-  .source { font-size: 0.95rem; color: var(--soft); }
-  .asks { list-style: none; padding: 0; }
-  .asks li { padding: 1.1rem 0; border-bottom: 1px solid #cfdcd5; }
-  .asks li:first-child { border-top: 1px solid #cfdcd5; }
-  .asks strong { font-family: var(--display); font-size: 1.2rem; display: block; }
-  .asks span { color: var(--soft); font-size: 1.05rem; }
-
-  /* Capturas */
-  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2.5rem; }
-  .shots figure { background: #fff; border: 1px solid #cfdcd5; border-radius: 1rem; padding: 1rem; }
-  .shots img { border-radius: 0.5rem; width: 100%; }
-  .shots figcaption { margin-top: 0.75rem; color: var(--soft); font-size: 1rem; }
-
-  /* Estado */
-  .status { background: var(--kit-deep); color: #fff; }
-  .status .lead { color: #c5dcd2; }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2.5rem; }
-  .cols ul { padding-left: 1.2rem; }
-  .cols li { margin-bottom: 0.6rem; color: #e4f0ea; }
-  .cols h3 { color: #fff; margin-bottom: 1rem; }
-
-  /* Aviso */
-  .notice {
-    background: var(--iodine-bg); border-left: 6px solid var(--iodine);
-    border-radius: 0 1rem 1rem 0; padding: 1.75rem 2rem; max-width: 46rem;
-  }
-  .notice h2 { font-size: 1.6rem; margin-bottom: 0.6rem; }
-  .notice p + p { margin-top: 0.75rem; }
-  .notice strong.sos { color: var(--signal); }
-
-  footer { padding: 2.5rem 0 3.5rem; border-top: 1px solid #cfdcd5; color: var(--soft); font-size: 1rem; }
-  footer p + p { margin-top: 0.35rem; }
-
-  @media (max-width: 52rem) {
-    .hero, .why, .cols, .shots { grid-template-columns: 1fr; }
-    .steps { grid-template-columns: 1fr 1fr; }
-    .panel { min-height: 0; gap: 1.5rem; }
-    .top nav { display: none; }
-    .block { padding: 3.5rem 0; }
-  }
-  @media (max-width: 30rem) {
-    .steps { grid-template-columns: 1fr; }
-  }
+  .tabla { overflow-x: auto; margin-top: 1rem; border: 1px solid var(--linea); border-radius: 0.6rem; background: var(--blanco); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.98rem; min-width: 58rem; }
+  th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { background: #dfe9f5; }
+  td select, td input[type=text] { padding: 0.4rem 0.5rem; min-width: 9rem; }
+  footer { text-align: center; color: var(--suave); font-size: 0.95rem; padding: 0 1.5rem 2.5rem; }
 </style>
 </head>
 <body>
 
-<header class="wrap">
-  <div class="top">
-    <a class="brand" href="#inicio"><span class="cross" aria-hidden="true"></span>First Aid Tech</a>
-    <nav aria-label="Secciones">
-      <a href="#como-funciona">Cómo funciona</a>
-      <a href="#estado">Estado del proyecto</a>
-      <a href="#aviso">Aviso</a>
-    </nav>
+<header>
+  <button class="marca" id="ir-inicio" type="button">First Aid Tech</button>
+  <div>
+    <button class="btn" id="ver-seguimiento" type="button">Seguimiento</button>
+    <a class="btn btn-rojo" href="tel:911">Llamar al 911</a>
   </div>
-
-  <section class="hero" id="inicio">
-    <div class="hero-text">
-      <h1>Qué hacer en los primeros minutos de una lesión</h1>
-      <p>First Aid Tech es una app que te guía según la zona del cuerpo lastimada, calcula la dosis del medicamento con base en tu peso y le deja al médico un registro de lo que pasó.</p>
-      <div class="actions">
-        <a class="btn btn-main" href="#como-funciona">Ver cómo funciona</a>
-        <a class="btn btn-plain" href="#estado">Estado del proyecto</a>
-      </div>
-    </div>
-
-    <div class="panel">
-      <svg viewBox="0 0 200 400" role="img" aria-label="Figura humana con diez puntos que marcan las zonas del cuerpo que cubre la app">
-        <circle class="figure-fill" cx="100" cy="40" r="26"/>
-        <path class="figure-line" d="M100 84 V214"/>
-        <path class="figure-line" d="M100 104 L58 132 L44 208"/>
-        <path class="figure-line" d="M100 104 L142 132 L156 208"/>
-        <path class="figure-line" d="M100 214 L84 296 L82 372"/>
-        <path class="figure-line" d="M100 214 L116 296 L118 372"/>
-        <g>
-          <circle class="ring" cx="100" cy="40" r="5"/><circle class="dot" cx="100" cy="40" r="5"/>
-          <circle class="ring" cx="100" cy="84" r="5" style="animation-delay:.3s"/><circle class="dot" cx="100" cy="84" r="5"/>
-          <circle class="ring" cx="58" cy="132" r="5" style="animation-delay:.6s"/><circle class="dot" cx="58" cy="132" r="5"/>
-          <circle class="ring" cx="100" cy="128" r="5" style="animation-delay:.9s"/><circle class="dot" cx="100" cy="128" r="5"/>
-          <circle class="ring" cx="100" cy="178" r="5" style="animation-delay:1.2s"/><circle class="dot" cx="100" cy="178" r="5"/>
-          <circle class="ring" cx="142" cy="132" r="5" style="animation-delay:1.5s"/><circle class="dot" cx="142" cy="132" r="5"/>
-          <circle class="ring" cx="44" cy="208" r="5" style="animation-delay:1.8s"/><circle class="dot" cx="44" cy="208" r="5"/>
-          <circle class="ring" cx="92" cy="255" r="5" style="animation-delay:2.1s"/><circle class="dot" cx="92" cy="255" r="5"/>
-          <circle class="ring" cx="116" cy="296" r="5" style="animation-delay:2.4s"/><circle class="dot" cx="116" cy="296" r="5"/>
-          <circle class="ring" cx="82" cy="372" r="5" style="animation-delay:2.7s"/><circle class="dot" cx="82" cy="372" r="5"/>
-        </g>
-      </svg>
-      <p>La app cubre 10 zonas del cuerpo. Eliges dónde está la lesión y empieza la guía.</p>
-    </div>
-  </section>
 </header>
+<div class="aviso-top">Prototipo académico: las recomendaciones y dosis no están validadas por un médico y no sustituyen la atención médica.</div>
 
-<main>
-  <section class="flow block" id="como-funciona">
-    <div class="wrap">
-      <h2>Cómo funciona</h2>
-      <p class="lead">Son cuatro pasos, pensados para alguien que está nervioso y con el celular en la mano.</p>
-      <ol class="steps">
-        <li>
-          <h3>Eliges la zona</h3>
-          <p>La pantalla de inicio muestra un botón por cada zona del cuerpo. Cada uno abre su propia guía.</p>
-        </li>
-        <li>
-          <h3>Das tus datos</h3>
-          <p>La app pide edad, peso y alergias antes de recomendar cualquier cosa.</p>
-        </li>
-        <li>
-          <h3>Recibes la guía</h3>
-          <p>Te muestra los cuidados para esa lesión y la dosis del medicamento calculada según tu peso.</p>
-        </li>
-        <li>
-          <h3>Queda el registro</h3>
-          <p>Los datos se guardan solos en una hoja de cálculo para que el médico sepa qué se tomó el paciente.</p>
-        </li>
-      </ol>
+<main id="app">
+
+  <section id="v-zonas" class="inicio">
+    <div>
+      <h1>¿Cuál zona es la afectada?</h1>
+      <div class="zonas" id="lista-zonas"></div>
+    </div>
+    <svg class="cuerpo" id="cuerpo" viewBox="0 0 200 390" aria-hidden="true">
+      <g class="parte" data-zona="brazo" stroke="#7cb342" stroke-width="22" stroke-linecap="round"><line x1="70" y1="110" x2="36" y2="188"/><line x1="130" y1="110" x2="164" y2="188"/></g>
+      <rect class="parte" data-zona="espalda" x="60" y="92" width="80" height="126" rx="10" fill="#c2185b"/>
+      <rect class="parte" data-zona="pecho" x="66" y="98" width="68" height="62" rx="5" fill="#1e88e5"/>
+      <rect class="parte" data-zona="barriga" x="66" y="160" width="68" height="46" fill="#29a8f2"/>
+      <g class="parte" data-zona="pierna" fill="#f59a00"><rect x="70" y="222" width="27" height="136"/><rect x="103" y="222" width="27" height="136"/></g>
+      <rect class="parte" data-zona="cadera" x="64" y="204" width="72" height="22" rx="8" fill="#f2c200"/>
+      <g class="parte" data-zona="pie" fill="#e53935"><ellipse cx="82" cy="364" rx="17" ry="10"/><ellipse cx="118" cy="364" rx="17" ry="10"/></g>
+      <circle class="parte" data-zona="sexual" cx="100" cy="234" r="9" fill="#6a3de8"/>
+      <rect class="parte" data-zona="cuello" x="89" y="74" width="22" height="26" fill="#43a047"/>
+      <circle class="parte" data-zona="cabeza" cx="100" cy="42" r="38" fill="#1565c0"/>
+    </svg>
+  </section>
+
+  <section id="v-senales" class="angosto" hidden>
+    <h1 id="t-senales"></h1>
+    <p class="sub">Antes de seguir, revisa si la persona tiene alguna de estas señales.</p>
+    <ul class="senales" id="lista-senales"></ul>
+    <div class="fila">
+      <button class="btn btn-rojo btn-grande" type="button" id="si-senales">Sí, tiene alguna</button>
+      <button class="btn btn-azul btn-grande" type="button" id="no-senales">No tiene ninguna</button>
+      <button class="btn btn-grande" type="button" data-ir="v-zonas">Cambiar de zona</button>
     </div>
   </section>
 
-  <section class="block">
-    <div class="wrap why">
-      <div>
-        <h2>Por qué hace falta</h2>
-        <p>En México, 5.6 millones de personas sufrieron una lesión accidental no fatal en un solo año. En casa, las más frecuentes son las caídas y las quemaduras.</p>
-        <p>Muchas de esas lesiones se atienden primero en casa y sin orientación. Tener una guía confiable en el celular puede cambiar lo que pasa en esos primeros minutos.</p>
-        <p class="source">Fuente: Ensanut 2018-19, Salud Pública de México (2020).</p>
-      </div>
-      <ul class="asks" aria-label="Lo que la app toma en cuenta">
-        <li><strong>Edad</strong><span>Para ajustar la recomendación a quien está lesionado.</span></li>
-        <li><strong>Peso</strong><span>La dosis del medicamento se calcula con este dato.</span></li>
-        <li><strong>Alergias</strong><span>Se preguntan antes de sugerir cualquier medicamento.</span></li>
-      </ul>
+  <section id="v-911" class="angosto" hidden>
+    <h1>Llama al 911 ahora</h1>
+    <p class="sub">Esas señales necesitan atención médica urgente. No des medicamentos, comida ni bebida, y no dejes sola a la persona.</p>
+    <a class="btn btn-rojo btn-grande" href="tel:911">Llamar al 911</a>
+    <div class="fila"><button class="btn" type="button" data-ir="v-zonas">Volver al inicio</button></div>
+  </section>
+
+  <section id="v-datos" class="angosto" hidden>
+    <h1>Datos de la persona lesionada</h1>
+    <p class="sub">Con esto se calcula la dosis. Tus respuestas se guardan en este equipo para dar seguimiento.</p>
+    <div class="tres">
+      <div><label for="nombre">Nombre</label><input type="text" id="nombre" autocomplete="off" maxlength="60"></div>
+      <div><label for="edad">Edad (años)</label><input type="number" id="edad" min="0" max="110" step="1" inputmode="numeric"></div>
+      <div><label for="peso">Peso (kg)</label><input type="number" id="peso" min="3" max="250" step="0.1" inputmode="decimal"></div>
+    </div>
+    <fieldset>
+      <legend>Marca lo que aplique</legend>
+      <div class="checks" id="lista-checks"></div>
+    </fieldset>
+    <label for="otras">Otras alergias (opcional)</label>
+    <input type="text" id="otras" autocomplete="off" maxlength="120">
+    <p class="error" id="error-datos" hidden></p>
+    <div class="fila">
+      <button class="btn btn-azul btn-grande" type="button" id="ver-guia">Ver qué hacer</button>
+      <button class="btn btn-grande" type="button" data-ir="v-senales">Regresar</button>
     </div>
   </section>
 
-  <!-- Capturas: sube tus imágenes a la carpeta img/ con estos nombres.
-       Si no existen, esta sección se oculta sola. -->
-  <section class="block" id="capturas" style="padding-top:0">
-    <div class="wrap">
-      <h2>Así se ve el prototipo</h2>
-      <div class="shots">
-        <figure>
-          <img src="img/pantalla-inicio.png" alt="Pantalla de inicio de First Aid Tech en MIT App Inventor, con un botón por cada zona del cuerpo">
-          <figcaption>Pantalla de inicio: el usuario elige la zona afectada.</figcaption>
-        </figure>
-        <figure>
-          <img src="img/bloques.png" alt="Bloques de programación de MIT App Inventor que abren la pantalla de cada zona del cuerpo">
-          <figcaption>Bloques: cada botón abre la pantalla de su zona.</figcaption>
-        </figure>
-      </div>
+  <section id="v-guia" class="angosto" hidden>
+    <h1 id="t-guia"></h1>
+    <p class="sub" id="resumen"></p>
+    <div id="cuidados"></div>
+    <h2>Medicamento básico</h2>
+    <div id="meds"></div>
+    <div class="caja">Si el dolor aumenta, aparece alguna señal de alarma o no hay mejoría en 48 horas, acude al médico.</div>
+    <p class="ok" id="guardado"></p>
+    <div class="fila">
+      <button class="btn btn-azul btn-grande" type="button" id="terminar">Terminar</button>
+      <button class="btn btn-grande" type="button" id="ver-seguimiento-2">Ver seguimiento</button>
     </div>
   </section>
 
-  <section class="status block" id="estado">
-    <div class="wrap">
-      <h2>Estado del proyecto</h2>
-      <p class="lead">Hoy es un prototipo que funciona. Esto es lo que ya está hecho y lo que sigue.</p>
-      <div class="cols">
-        <div>
-          <h3>Lo que ya funciona</h3>
-          <ul>
-            <li>App hecha en MIT App Inventor</li>
-            <li>Guía para 10 zonas del cuerpo</li>
-            <li>Cálculo de dosis según el peso</li>
-            <li>Captura de edad, peso y alergias</li>
-            <li>Envío automático de los datos a una hoja de cálculo</li>
-          </ul>
-        </div>
-        <div>
-          <h3>Lo que sigue</h3>
-          <ul>
-            <li>Revisar los contenidos y las dosis con un médico</li>
-            <li>Pasar la app a Flutter o Kotlin</li>
-            <li>Modo sin internet</li>
-            <li>Botón para llamar al 911</li>
-            <li>Alerta automática de alergias</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="block" id="aviso">
-    <div class="wrap">
-      <div class="notice">
-        <h2>Antes de usarla</h2>
-        <p>First Aid Tech es un prototipo académico. Sus contenidos y dosis todavía no están validados por un médico, así que no debe usarse para decidir un tratamiento.</p>
-        <p>No sustituye la atención médica. <strong class="sos">En una emergencia, llama al 911.</strong></p>
-      </div>
+  <section id="v-seguimiento" hidden>
+    <h1>Seguimiento</h1>
+    <p class="sub">Cada consulta queda guardada aquí. Actualiza cómo sigue la persona y agrega notas.</p>
+    <label for="buscar">Buscar por nombre</label>
+    <input type="text" id="buscar" autocomplete="off" style="max-width:24rem">
+    <p id="sin-registros" class="nota">Todavía no hay registros.</p>
+    <div class="tabla" id="caja-tabla" hidden><table>
+      <thead><tr><th>Fecha</th><th>Nombre</th><th>Edad</th><th>Peso</th><th>Zona</th><th>Alergias y condiciones</th><th>Recomendación</th><th>Cómo sigue</th><th>Nota</th></tr></thead>
+      <tbody id="filas"></tbody>
+    </table></div>
+    <div class="fila">
+      <button class="btn btn-azul" type="button" id="descargar">Descargar base de datos (CSV)</button>
+      <button class="btn" type="button" id="borrar">Borrar todo</button>
+      <button class="btn" type="button" data-ir="v-zonas">Volver al inicio</button>
     </div>
   </section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <p>Proyecto PAIF de Emilio Turribiates González, Ingeniería Mecatrónica, Universidad Anáhuac México.</p>
-    <p><a href="https://github.com/emilioturridm">Más proyectos en GitHub</a></p>
-  </div>
-</footer>
+<footer>Proyecto PAIF de Emilio Turribiates González, Ingeniería Mecatrónica, Universidad Anáhuac México.</footer>
 
 <script>
-  // Si falta una captura, se oculta; si faltan las dos, se oculta toda la sección.
-  (function () {
-    var section = document.getElementById('capturas');
-    if (!section) return;
-    var figures = section.querySelectorAll('figure');
-    var left = figures.length;
-    function drop(fig) {
-      if (fig.hidden) return;
-      fig.hidden = true;
-      left -= 1;
-      if (left === 0) section.hidden = true;
+/* =====================================================================
+   CONTENIDO EDITABLE
+   Todo lo que la app dice y calcula está en estos bloques. Cámbialos
+   para que coincidan con tu app y con lo que valide el médico.
+   ===================================================================== */
+
+// Para mandar cada registro a tu hoja de Google, pega aquí la URL de tu
+// Web App de Google Apps Script. Vacío = solo se guarda en este equipo.
+var SHEET_URL = "";
+
+var CHECKS = [
+  { id: "alergiaParacetamol", texto: "Alergia al paracetamol" },
+  { id: "alergiaAine", texto: "Alergia al ibuprofeno, la aspirina u otro antiinflamatorio" },
+  { id: "asma", texto: "Asma" },
+  { id: "estomagoRinon", texto: "Úlcera, gastritis o enfermedad del riñón" },
+  { id: "higado", texto: "Enfermedad del hígado" },
+  { id: "embarazo", texto: "Embarazo" },
+  { id: "anticoagulantes", texto: "Toma anticoagulantes" }
+];
+
+// mg por kg en cada toma, tope por toma y tope al día (en mg)
+var MEDS = {
+  paracetamol: { nombre: "Paracetamol", minKg: 10, maxKg: 15, topeToma: 1000, cada: "cada 6 a 8 horas", maxTomas: 4, diaKg: 60, topeDia: 3000,
+    bloqueos: ["alergiaParacetamol", "higado"], nota: "" },
+  ibuprofeno: { nombre: "Ibuprofeno", minKg: 5, maxKg: 10, topeToma: 400, cada: "cada 8 horas", maxTomas: 3, diaKg: 30, topeDia: 1200,
+    bloqueos: ["alergiaAine", "asma", "estomagoRinon", "embarazo", "anticoagulantes"], nota: "Tómalo con alimento." }
+};
+var EDAD_MINIMA = 2;   // años; por debajo no se calcula dosis
+var PESO_MINIMO = 10;  // kg; por debajo no se calcula dosis
+
+var ESTADOS = ["Pendiente", "Mejoró", "Sigue igual", "Empeoró", "Fue al médico"];
+
+var RICE = ["Deja de usar la zona y mantenla en reposo.", "Aplica hielo envuelto en un trapo de 15 a 20 minutos, cada 2 o 3 horas.", "Si hay hinchazón, pon una venda elástica sin apretar de más.", "Mantén la zona elevada, por encima del corazón si se puede."];
+var CORTADA = ["Ponte guantes o lávate las manos, y lava la herida con agua y jabón.", "Presiona con una gasa limpia hasta que deje de sangrar.", "Aplica antiséptico alrededor y cubre con una gasa o curita.", "Cambia la curación todos los días."];
+var QUEMADURA = ["Pon la zona bajo el chorro de agua fresca durante 20 minutos.", "No uses hielo, pasta de dientes, mantequilla ni cremas caseras.", "No revientes las ampollas.", "Cubre con una gasa limpia sin apretar."];
+
+// "color" es el del botón y el de la figura. "oscura: true" si el color es claro.
+var ZONAS = [
+  { id: "cabeza", nombre: "Cabeza", color: "#1565c0",
+    senales: ["Perdió el conocimiento, aunque fuera unos segundos", "Vómito repetido", "Confusión, mucho sueño o dificultad para hablar", "Convulsiones", "Sangre o líquido claro por la nariz o el oído", "Dolor de cabeza muy fuerte o que va en aumento"],
+    casos: [{ titulo: "Golpe en la cabeza", pasos: ["Sienta a la persona y que descanse.", "Aplica hielo envuelto en un trapo de 15 a 20 minutos sobre el golpe.", "Si hay una herida que sangra, presiona con una gasa limpia.", "Vigila a la persona durante las siguientes 24 horas."] }],
+    meds: ["paracetamol"], notaMed: "Después de un golpe en la cabeza se evita el ibuprofeno." },
+  { id: "cuello", nombre: "Cuello", color: "#43a047",
+    senales: ["La lesión fue por una caída, un choque o un clavado: no muevas a la persona", "Hormigueo o falta de fuerza en brazos o piernas", "Le cuesta trabajo respirar o tragar", "Cuello rígido con fiebre y dolor de cabeza fuerte"],
+    casos: [{ titulo: "Tirón o tortícolis", pasos: ["Evita los movimientos bruscos y cargar cosas pesadas.", "Los primeros dos días aplica frío de 15 a 20 minutos.", "Después del segundo día puedes cambiar a calor.", "Mueve el cuello despacio, hasta donde no duela."] }],
+    meds: ["paracetamol", "ibuprofeno"], notaMed: "" },
+  { id: "pecho", nombre: "Pecho", color: "#1e88e5",
+    senales: ["Dolor opresivo en el pecho", "Dolor que se va al brazo, al cuello o a la mandíbula", "Dificultad para respirar", "Sudor frío, náusea o mareo", "Golpe fuerte por accidente de auto o caída de altura"],
+    casos: [{ titulo: "Golpe leve en el pecho", pasos: ["Que la persona descanse en la posición que le resulte más cómoda.", "Aplica hielo envuelto en un trapo de 15 a 20 minutos.", "Si el dolor aumenta al respirar, acude al médico."] }],
+    meds: [], notaMed: "El dolor de pecho no se trata con medicamentos por cuenta propia." },
+  { id: "brazo", nombre: "Brazo", color: "#7cb342",
+    senales: ["Se ve deformado o se asoma el hueso", "El sangrado no para después de 10 minutos de presión", "Herida profunda o con algo clavado", "Quemadura más grande que la palma de la mano", "No siente o no puede mover los dedos"],
+    casos: [{ titulo: "Golpe o torcedura", pasos: RICE }, { titulo: "Cortada", pasos: CORTADA }, { titulo: "Quemadura leve", pasos: QUEMADURA }],
+    meds: ["paracetamol", "ibuprofeno"], notaMed: "" },
+  { id: "espalda", nombre: "Espalda", color: "#c2185b",
+    senales: ["La lesión fue por una caída de altura o un accidente: no muevas a la persona", "Hormigueo o falta de fuerza en brazos o piernas", "No puede controlar la orina o la evacuación", "Dolor muy fuerte en la columna"],
+    casos: [{ titulo: "Tirón o golpe leve", pasos: ["Reposo relativo: evita cargar y los movimientos bruscos.", "Los primeros dos días aplica frío de 15 a 20 minutos.", "Después del segundo día puedes cambiar a calor.", "Muévete poco a poco conforme el dolor lo permita."] }],
+    meds: ["paracetamol", "ibuprofeno"], notaMed: "" },
+  { id: "barriga", nombre: "Barriga", color: "#039be5",
+    senales: ["Dolor muy fuerte o que va en aumento", "Barriga dura al tocarla", "Vómito con sangre", "Palidez, mareo o desmayo", "Herida profunda"],
+    casos: [{ titulo: "Golpe en la barriga", pasos: ["Acuesta a la persona boca arriba con las rodillas dobladas.", "No le des de comer ni de beber mientras tenga dolor fuerte.", "Vigila si el dolor aumenta en las siguientes horas."] }],
+    meds: [], notaMed: "Un analgésico puede ocultar una lesión interna; primero revisión médica." },
+  { id: "cadera", nombre: "Cadera", color: "#f2c200", oscura: true,
+    senales: ["No puede levantarse o apoyar la pierna después de una caída", "Una pierna se ve más corta o girada hacia afuera", "Dolor muy fuerte al mover la pierna", "Es una persona mayor que se cayó"],
+    casos: [{ titulo: "Golpe leve en la cadera", pasos: ["Que la persona descanse y evite cargar peso de ese lado.", "Aplica hielo envuelto en un trapo de 15 a 20 minutos, cada 2 o 3 horas.", "Si al día siguiente cuesta trabajo caminar, acude al médico."] }],
+    meds: ["paracetamol", "ibuprofeno"], notaMed: "" },
+  { id: "sexual", nombre: "Órgano sexual", color: "#6a3de8",
+    senales: ["Dolor repentino y muy fuerte en un testículo", "Hinchazón o moretón grande", "Sangrado que no para", "Sangre en la orina o no puede orinar", "Piel atorada en un cierre u otro objeto"],
+    casos: [{ titulo: "Golpe leve", pasos: ["Acuesta a la persona y que descanse.", "Aplica frío envuelto en un trapo de 10 a 15 minutos.", "Usa ropa interior ajustada que dé soporte.", "Si el dolor no baja en una hora, acude al médico."] }],
+    meds: ["paracetamol"], notaMed: "" },
+  { id: "pierna", nombre: "Pierna", color: "#f59a00", oscura: true,
+    senales: ["Se ve deformada o se asoma el hueso", "No puede apoyar la pierna", "Se hinchó muy rápido", "El sangrado no para después de 10 minutos de presión", "Quemadura más grande que la palma de la mano"],
+    casos: [{ titulo: "Golpe o torcedura", pasos: RICE }, { titulo: "Raspón o cortada", pasos: CORTADA }, { titulo: "Quemadura leve", pasos: QUEMADURA }],
+    meds: ["paracetamol", "ibuprofeno"], notaMed: "" },
+  { id: "pie", nombre: "Pie", color: "#e53935",
+    senales: ["No puede dar cuatro pasos", "Se ve deformado", "Pie frío, pálido o sin sensibilidad", "Herida profunda o con algo clavado"],
+    casos: [{ titulo: "Torcedura", pasos: RICE }, { titulo: "Cortada", pasos: CORTADA }],
+    meds: ["paracetamol", "ibuprofeno"], notaMed: "" }
+];
+
+/* ========================= FUNCIONAMIENTO ========================= */
+var $ = function (id) { return document.getElementById(id); };
+var VISTAS = ["v-zonas", "v-senales", "v-911", "v-datos", "v-guia", "v-seguimiento"];
+var zona = null;
+
+function el(tag, texto, clase) {
+  var n = document.createElement(tag);
+  if (texto != null) n.textContent = texto;
+  if (clase) n.className = clase;
+  return n;
+}
+function ir(id) {
+  VISTAS.forEach(function (v) { $(v).hidden = v !== id; });
+  window.scrollTo(0, 0);
+}
+function piso5(n) { return Math.floor(n / 5) * 5; }
+
+// Pantalla de zonas: botones y figura conectados
+function resaltar(id) {
+  $("cuerpo").classList.toggle("con-activa", !!id);
+  document.querySelectorAll(".parte").forEach(function (p) { p.classList.toggle("activa", p.getAttribute("data-zona") === id); });
+  document.querySelectorAll(".zona").forEach(function (b) { b.classList.toggle("activa", b.getAttribute("data-zona") === id); });
+}
+function porId(id) { return ZONAS.filter(function (z) { return z.id === id; })[0]; }
+
+ZONAS.forEach(function (z) {
+  var b = el("button", z.nombre, "zona" + (z.oscura ? " oscura" : ""));
+  b.type = "button"; b.style.setProperty("--c", z.color); b.setAttribute("data-zona", z.id);
+  b.addEventListener("click", function () { elegirZona(z); });
+  b.addEventListener("mouseenter", function () { resaltar(z.id); });
+  b.addEventListener("focus", function () { resaltar(z.id); });
+  b.addEventListener("mouseleave", function () { resaltar(null); });
+  b.addEventListener("blur", function () { resaltar(null); });
+  $("lista-zonas").appendChild(b);
+});
+document.querySelectorAll(".parte").forEach(function (p) {
+  var id = p.getAttribute("data-zona");
+  p.addEventListener("click", function () { elegirZona(porId(id)); });
+  p.addEventListener("mouseenter", function () { resaltar(id); });
+  p.addEventListener("mouseleave", function () { resaltar(null); });
+});
+CHECKS.forEach(function (c) {
+  var l = el("label", null, "check"), i = document.createElement("input");
+  i.type = "checkbox"; i.id = "c-" + c.id;
+  l.appendChild(i); l.appendChild(el("span", c.texto));
+  $("lista-checks").appendChild(l);
+});
+
+// Señales de alarma
+function elegirZona(z) {
+  zona = z; resaltar(null);
+  $("t-senales").textContent = z.nombre + ": señales de alarma";
+  var ul = $("lista-senales"); ul.textContent = "";
+  z.senales.forEach(function (s) { ul.appendChild(el("li", s)); });
+  ir("v-senales");
+}
+$("si-senales").addEventListener("click", function () { ir("v-911"); });
+$("no-senales").addEventListener("click", function () { $("error-datos").hidden = true; ir("v-datos"); });
+
+// Datos
+function leerDatos() {
+  var nombre = $("nombre").value.trim(), edad = parseFloat($("edad").value), peso = parseFloat($("peso").value);
+  if (!nombre) return { error: "Escribe el nombre de la persona." };
+  if (isNaN(edad) || edad < 0 || edad > 110) return { error: "Escribe la edad en años (de 0 a 110)." };
+  if (isNaN(peso) || peso < 3 || peso > 250) return { error: "Escribe el peso en kilos (de 3 a 250)." };
+  var marcas = {}, textos = [];
+  CHECKS.forEach(function (c) { marcas[c.id] = $("c-" + c.id).checked; if (marcas[c.id]) textos.push(c.texto); });
+  var otras = $("otras").value.trim();
+  if (otras) textos.push("Otras alergias: " + otras);
+  return { nombre: nombre, edad: edad, peso: peso, marcas: marcas, textos: textos };
+}
+function limpiarDatos() {
+  ["nombre", "edad", "peso", "otras"].forEach(function (id) { $(id).value = ""; });
+  CHECKS.forEach(function (c) { $("c-" + c.id).checked = false; });
+}
+
+// Cálculo de dosis
+function calcular(clave, d) {
+  var m = MEDS[clave];
+  if (d.edad < EDAD_MINIMA || d.peso < PESO_MINIMO)
+    return { nombre: m.nombre, ok: false, motivo: "En menores de " + EDAD_MINIMA + " años o de menos de " + PESO_MINIMO + " kg la dosis la indica el pediatra." };
+  var motivo = null;
+  CHECKS.forEach(function (c) { if (!motivo && d.marcas[c.id] && m.bloqueos.indexOf(c.id) !== -1) motivo = c.texto; });
+  if (motivo) return { nombre: m.nombre, ok: false, motivo: "No se recomienda por: " + motivo.toLowerCase() + "." };
+  var min = Math.min(piso5(d.peso * m.minKg), m.topeToma);
+  var max = Math.min(piso5(d.peso * m.maxKg), m.topeToma);
+  var dia = Math.min(piso5(d.peso * m.diaKg), m.topeDia);
+  var rango = (min === max ? max : min + " a " + max) + " mg por toma";
+  return { nombre: m.nombre, ok: true, rango: rango, dia: dia, cada: m.cada, maxTomas: m.maxTomas, nota: m.nota,
+    texto: m.nombre + " " + rango + ", " + m.cada + ", máximo " + dia + " mg al día" };
+}
+
+// Base de datos (se guarda en este equipo)
+var CLAVE = "first-aid-tech-db";
+function leerDB() { try { return JSON.parse(localStorage.getItem(CLAVE)) || []; } catch (e) { return []; } }
+function escribirDB(lista) { try { localStorage.setItem(CLAVE, JSON.stringify(lista)); return true; } catch (e) { return false; } }
+function guardar(reg) {
+  var lista = leerDB(); lista.push(reg);
+  var ok = escribirDB(lista);
+  if (SHEET_URL) {
+    try { fetch(SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(reg) }); } catch (e) {}
+  }
+  return ok;
+}
+
+// Guía
+$("ver-guia").addEventListener("click", function () {
+  var d = leerDatos();
+  if (d.error) { $("error-datos").textContent = d.error; $("error-datos").hidden = false; return; }
+  $("t-guia").textContent = d.nombre + ", esto es lo que hay que hacer";
+  $("resumen").textContent = zona.nombre + ". " + d.edad + " años, " + d.peso + " kg. " + (d.textos.length ? d.textos.join("; ") + "." : "Sin alergias ni condiciones marcadas.");
+
+  var c = $("cuidados"); c.textContent = "";
+  zona.casos.forEach(function (caso) {
+    c.appendChild(el("h2", caso.titulo));
+    var ol = el("ol", null, "pasos");
+    caso.pasos.forEach(function (p) { ol.appendChild(el("li", p)); });
+    c.appendChild(ol);
+  });
+
+  var caja = $("meds"), recos = []; caja.textContent = "";
+  if (!zona.meds.length) {
+    var n = el("div", null, "med no");
+    n.appendChild(el("p", "Para esta zona no se recomienda medicamento.", "dosis"));
+    caja.appendChild(n); recos.push("Sin medicamento");
+  }
+  zona.meds.forEach(function (clave) {
+    var r = calcular(clave, d), box = el("div", null, "med" + (r.ok ? "" : " no"));
+    box.appendChild(el("h3", r.nombre));
+    if (r.ok) {
+      box.appendChild(el("p", r.rango, "dosis"));
+      box.appendChild(el("p", "Una toma " + r.cada + ". Máximo " + r.maxTomas + " tomas y " + r.dia + " mg en 24 horas."));
+      box.appendChild(el("p", "Revisa en la caja cuántos mg trae cada tableta o cada ml. " + r.nota, "nota"));
+      recos.push(r.texto);
+    } else {
+      box.appendChild(el("p", r.motivo, "dosis"));
+      recos.push(r.nombre + ": no recomendado");
     }
-    figures.forEach(function (fig) {
-      var img = fig.querySelector('img');
-      img.addEventListener('error', function () { drop(fig); });
-      if (img.complete && img.naturalWidth === 0) drop(fig);
-    });
-  })();
+    caja.appendChild(box);
+  });
+  if (zona.meds.length > 1) caja.appendChild(el("p", "Elige uno de los dos. No los combines sin indicación médica.", "nota"));
+  if (zona.notaMed) caja.appendChild(el("p", zona.notaMed, "nota"));
+
+  var previas = leerDB().filter(function (r) { return r.nombre.toLowerCase() === d.nombre.toLowerCase(); }).length;
+  var ok = guardar({ id: Date.now(), fecha: new Date().toLocaleString("es-MX"), nombre: d.nombre, edad: d.edad, peso: d.peso,
+    zona: zona.nombre, alergias: d.textos.join("; ") || "Ninguna", recomendacion: recos.join(" | "), estado: ESTADOS[0], nota: "" });
+  $("guardado").textContent = ok
+    ? "Consulta guardada para seguimiento." + (previas ? " " + d.nombre + " ya tenía " + previas + (previas === 1 ? " consulta anterior." : " consultas anteriores.") : "")
+    : "No se pudo guardar la consulta: el navegador bloqueó el almacenamiento.";
+  ir("v-guia");
+});
+$("terminar").addEventListener("click", function () { limpiarDatos(); ir("v-zonas"); });
+
+// Seguimiento
+var COLS = ["fecha", "nombre", "edad", "peso", "zona", "alergias", "recomendacion"];
+function actualizar(id, campo, valor) {
+  var lista = leerDB();
+  lista.forEach(function (r) { if (r.id === id) r[campo] = valor; });
+  escribirDB(lista);
+}
+function pintar() {
+  var todos = leerDB(), q = $("buscar").value.trim().toLowerCase();
+  var lista = todos.filter(function (r) { return !q || r.nombre.toLowerCase().indexOf(q) !== -1; });
+  var tb = $("filas"); tb.textContent = "";
+  lista.slice().reverse().forEach(function (r) {
+    var tr = document.createElement("tr");
+    COLS.forEach(function (k) { tr.appendChild(el("td", String(r[k] == null ? "" : r[k]))); });
+    var sel = document.createElement("select"); sel.setAttribute("aria-label", "Cómo sigue " + r.nombre);
+    ESTADOS.forEach(function (e) { var o = el("option", e); o.value = e; if (e === r.estado) o.selected = true; sel.appendChild(o); });
+    sel.addEventListener("change", function () { actualizar(r.id, "estado", sel.value); });
+    var td1 = document.createElement("td"); td1.appendChild(sel); tr.appendChild(td1);
+    var inp = document.createElement("input"); inp.type = "text"; inp.value = r.nota || ""; inp.maxLength = 200; inp.setAttribute("aria-label", "Nota de " + r.nombre);
+    inp.addEventListener("change", function () { actualizar(r.id, "nota", inp.value.trim()); });
+    var td2 = document.createElement("td"); td2.appendChild(inp); tr.appendChild(td2);
+    tb.appendChild(tr);
+  });
+  $("sin-registros").textContent = todos.length ? "Nadie con ese nombre." : "Todavía no hay registros.";
+  $("sin-registros").hidden = lista.length > 0;
+  $("caja-tabla").hidden = lista.length === 0;
+  $("descargar").disabled = $("borrar").disabled = todos.length === 0;
+}
+function abrirSeguimiento() { $("buscar").value = ""; pintar(); ir("v-seguimiento"); }
+$("ver-seguimiento").addEventListener("click", abrirSeguimiento);
+$("ver-seguimiento-2").addEventListener("click", function () { limpiarDatos(); abrirSeguimiento(); });
+$("buscar").addEventListener("input", pintar);
+$("descargar").addEventListener("click", function () {
+  var cols = COLS.concat(["estado", "nota"]);
+  var filas = [["Fecha", "Nombre", "Edad", "Peso (kg)", "Zona", "Alergias y condiciones", "Recomendación", "Cómo sigue", "Nota"]];
+  leerDB().forEach(function (r) { filas.push(cols.map(function (k) { return r[k]; })); });
+  var csv = filas.map(function (f) { return f.map(function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }).join(","); }).join("\r\n");
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "base-de-datos-first-aid-tech.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$("borrar").addEventListener("click", function () {
+  if (confirm("¿Borrar todos los registros de este equipo?")) { escribirDB([]); pintar(); }
+});
+
+// Navegación
+document.querySelectorAll("[data-ir]").forEach(function (b) {
+  b.addEventListener("click", function () { ir(b.getAttribute("data-ir")); });
+});
+$("ir-inicio").addEventListener("click", function () { ir("v-zonas"); });
 </script>
 </body>
 </html>

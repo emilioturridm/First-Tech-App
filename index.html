@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First Aid Tech | App de primeros auxilios</title>
+<meta name="description" content="First Aid Tech es un prototipo de app de primeros auxilios hecho en MIT App Inventor: guía por zona del cuerpo, dosis según el peso y registro para el médico.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --kit: #0e5a43;        /* verde de botiquín */
+    --kit-deep: #0a4332;
+    --gauze: #e3eee8;      /* gasa */
+    --paper: #f7faf8;
+    --ink: #17231e;
+    --soft: #4b5d55;
+    --iodine: #a86f06;     /* yodo: avisos */
+    --iodine-bg: #fbf1d9;
+    --signal: #c7332a;     /* solo para emergencias */
+    --display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+    --body: "Atkinson Hyperlegible", Verdana, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: var(--kit); }
+  a:focus-visible, .btn:focus-visible {
+    outline: 3px solid var(--iodine);
+    outline-offset: 3px;
+  }
+
+  .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.5rem; }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.08; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(1.9rem, 4vw, 2.75rem); font-weight: 700; margin-bottom: 1rem; }
+  h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .lead { max-width: 38rem; color: var(--soft); }
+  .block { padding: 5rem 0; }
+
+  /* Barra superior */
+  .top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 0;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-family: var(--display); font-weight: 700; font-size: 1.15rem;
+    color: var(--ink); text-decoration: none;
+  }
+  .cross {
+    width: 1.75rem; height: 1.75rem; border-radius: 0.4rem;
+    background: var(--kit); position: relative; flex: none;
+  }
+  .cross::before, .cross::after {
+    content: ""; position: absolute; background: #fff; border-radius: 1px;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  .cross::before { width: 58%; height: 20%; }
+  .cross::after { width: 20%; height: 58%; }
+  .top nav { display: flex; gap: 1.5rem; }
+  .top nav a { color: var(--ink); text-decoration: none; font-size: 1rem; }
+  .top nav a:hover { text-decoration: underline; }
+
+  /* Inicio */
+  .hero {
+    display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 3rem;
+    align-items: stretch; padding: 2rem 0 5rem;
+  }
+  .hero-text { display: flex; flex-direction: column; justify-content: center; }
+  h1 {
+    font-size: clamp(2.6rem, 7vw, 5rem); font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+  .hero p { max-width: 32rem; color: var(--soft); font-size: 1.25rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+  .btn {
+    display: inline-block; padding: 0.85rem 1.4rem; border-radius: 0.6rem;
+    font-weight: 700; text-decoration: none; font-size: 1.05rem;
+  }
+  .btn-main { background: var(--kit); color: #fff; }
+  .btn-main:hover { background: var(--kit-deep); }
+  .btn-plain { color: var(--ink); border: 2px solid var(--ink); }
+  .btn-plain:hover { background: var(--gauze); }
+
+  .panel {
+    background: var(--kit); border-radius: 1.5rem; color: #fff;
+    padding: 2rem 2rem 1.5rem; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between; min-height: 30rem;
+  }
+  .panel svg { width: min(100%, 15rem); height: auto; }
+  .panel p { color: #d5e8df; font-size: 1rem; text-align: center; max-width: 16rem; }
+  .figure-line { stroke: #ffffff; stroke-opacity: 0.55; stroke-width: 14; stroke-linecap: round; fill: none; }
+  .figure-fill { fill: #ffffff; fill-opacity: 0.55; }
+  .dot { fill: #fff; }
+  .ring { fill: none; stroke: #fff; stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: pulse 3s ease-out infinite; }
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.9; }
+    70%, 100% { transform: scale(3.2); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ring { animation: none; opacity: 0.5; transform: scale(2); }
+    html { scroll-behavior: auto; }
+  }
+
+  /* Cómo funciona */
+  .flow { background: var(--gauze); }
+  .steps {
+    list-style: none; padding: 0; margin-top: 2.5rem;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
+    counter-reset: paso;
+  }
+  .steps li { counter-increment: paso; border-top: 3px solid var(--kit); padding-top: 1rem; }
+  .steps li::before {
+    content: counter(paso);
+    font-family: var(--display); font-weight: 700; font-size: 2.5rem;
+    color: var(--kit); display: block; line-height: 1; margin-bottom: 0.75rem;
+  }
+  .steps p { color: var(--soft); font-size: 1.05rem; }
+
+  /* Por qué */
+  .why { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+  .why p + p { margin-top: 1rem; }
+  .source { font-size: 0.95rem; color: var(--soft); }
+  .asks { list-style: none; padding: 0; }
+  .asks li { padding: 1.1rem 0; border-bottom: 1px solid #cfdcd5; }
+  .asks li:first-child { border-top: 1px solid #cfdcd5; }
+  .asks strong { font-family: var(--display); font-size: 1.2rem; display: block; }
+  .asks span { color: var(--soft); font-size: 1.05rem; }
+
+  /* Capturas */
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2.5rem; }
+  .shots figure { background: #fff; border: 1px solid #cfdcd5; border-radius: 1rem; padding: 1rem; }
+  .shots img { border-radius: 0.5rem; width: 100%; }
+  .shots figcaption { margin-top: 0.75rem; color: var(--soft); font-size: 1rem; }
+
+  /* Estado */
+  .status { background: var(--kit-deep); color: #fff; }
+  .status .lead { color: #c5dcd2; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2.5rem; }
+  .cols ul { padding-left: 1.2rem; }
+  .cols li { margin-bottom: 0.6rem; color: #e4f0ea; }
+  .cols h3 { color: #fff; margin-bottom: 1rem; }
+
+  /* Aviso */
+  .notice {
+    background: var(--iodine-bg); border-left: 6px solid var(--iodine);
+    border-radius: 0 1rem 1rem 0; padding: 1.75rem 2rem; max-width: 46rem;
+  }
+  .notice h2 { font-size: 1.6rem; margin-bottom: 0.6rem; }
+  .notice p + p { margin-top: 0.75rem; }
+  .notice strong.sos { color: var(--signal); }
+
+  footer { padding: 2.5rem 0 3.5rem; border-top: 1px solid #cfdcd5; color: var(--soft); font-size: 1rem; }
+  footer p + p { margin-top: 0.35rem; }
+
+  @media (max-width: 52rem) {
+    .hero, .why, .cols, .shots { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .panel { min-height: 0; gap: 1.5rem; }
+    .top nav { display: none; }
+    .block { padding: 3.5rem 0; }
+  }
+  @media (max-width: 30rem) {
+    .steps { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="top">
+    <a class="brand" href="#inicio"><span class="cross" aria-hidden="true"></span>First Aid Tech</a>
+    <nav aria-label="Secciones">
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#estado">Estado del proyecto</a>
+      <a href="#aviso">Aviso</a>
+    </nav>
+  </div>
+
+  <section class="hero" id="inicio">
+    <div class="hero-text">
+      <h1>Qué hacer en los primeros minutos de una lesión</h1>
+      <p>First Aid Tech es una app que te guía según la zona del cuerpo lastimada, calcula la dosis del medicamento con base en tu peso y le deja al médico un registro de lo que pasó.</p>
+      <div class="actions">
+        <a class="btn btn-main" href="#como-funciona">Ver cómo funciona</a>
+        <a class="btn btn-plain" href="#estado">Estado del proyecto</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <svg viewBox="0 0 200 400" role="img" aria-label="Figura humana con diez puntos que marcan las zonas del cuerpo que cubre la app">
+        <circle class="figure-fill" cx="100" cy="40" r="26"/>
+        <path class="figure-line" d="M100 84 V214"/>
+        <path class="figure-line" d="M100 104 L58 132 L44 208"/>
+        <path class="figure-line" d="M100 104 L142 132 L156 208"/>
+        <path class="figure-line" d="M100 214 L84 296 L82 372"/>
+        <path class="figure-line" d="M100 214 L116 296 L118 372"/>
+        <g>
+          <circle class="ring" cx="100" cy="40" r="5"/><circle class="dot" cx="100" cy="40" r="5"/>
+          <circle class="ring" cx="100" cy="84" r="5" style="animation-delay:.3s"/><circle class="dot" cx="100" cy="84" r="5"/>
+          <circle class="ring" cx="58" cy="132" r="5" style="animation-delay:.6s"/><circle class="dot" cx="58" cy="132" r="5"/>
+          <circle class="ring" cx="100" cy="128" r="5" style="animation-delay:.9s"/><circle class="dot" cx="100" cy="128" r="5"/>
+          <circle class="ring" cx="100" cy="178" r="5" style="animation-delay:1.2s"/><circle class="dot" cx="100" cy="178" r="5"/>
+          <circle class="ring" cx="142" cy="132" r="5" style="animation-delay:1.5s"/><circle class="dot" cx="142" cy="132" r="5"/>
+          <circle class="ring" cx="44" cy="208" r="5" style="animation-delay:1.8s"/><circle class="dot" cx="44" cy="208" r="5"/>
+          <circle class="ring" cx="92" cy="255" r="5" style="animation-delay:2.1s"/><circle class="dot" cx="92" cy="255" r="5"/>
+          <circle class="ring" cx="116" cy="296" r="5" style="animation-delay:2.4s"/><circle class="dot" cx="116" cy="296" r="5"/>
+          <circle class="ring" cx="82" cy="372" r="5" style="animation-delay:2.7s"/><circle class="dot" cx="82" cy="372" r="5"/>
+        </g>
+      </svg>
+      <p>La app cubre 10 zonas del cuerpo. Eliges dónde está la lesión y empieza la guía.</p>
+    </div>
+  </section>
+</header>
+
+<main>
+  <section class="flow block" id="como-funciona">
+    <div class="wrap">
+      <h2>Cómo funciona</h2>
+      <p class="lead">Son cuatro pasos, pensados para alguien que está nervioso y con el celular en la mano.</p>
+      <ol class="steps">
+        <li>
+          <h3>Eliges la zona</h3>
+          <p>La pantalla de inicio muestra un botón por cada zona del cuerpo. Cada uno abre su propia guía.</p>
+        </li>
+        <li>
+          <h3>Das tus datos</h3>
+          <p>La app pide edad, peso y alergias antes de recomendar cualquier cosa.</p>
+        </li>
+        <li>
+          <h3>Recibes la guía</h3>
+          <p>Te muestra los cuidados para esa lesión y la dosis del medicamento calculada según tu peso.</p>
+        </li>
+        <li>
+          <h3>Queda el registro</h3>
+          <p>Los datos se guardan solos en una hoja de cálculo para que el médico sepa qué se tomó el paciente.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap why">
+      <div>
+        <h2>Por qué hace falta</h2>
+        <p>En México, 5.6 millones de personas sufrieron una lesión accidental no fatal en un solo año. En casa, las más frecuentes son las caídas y las quemaduras.</p>
+        <p>Muchas de esas lesiones se atienden primero en casa y sin orientación. Tener una guía confiable en el celular puede cambiar lo que pasa en esos primeros minutos.</p>
+        <p class="source">Fuente: Ensanut 2018-19, Salud Pública de México (2020).</p>
+      </div>
+      <ul class="asks" aria-label="Lo que la app toma en cuenta">
+        <li><strong>Edad</strong><span>Para ajustar la recomendación a quien está lesionado.</span></li>
+        <li><strong>Peso</strong><span>La dosis del medicamento se calcula con este dato.</span></li>
+        <li><strong>Alergias</strong><span>Se preguntan antes de sugerir cualquier medicamento.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Capturas: sube tus imágenes a la carpeta img/ con estos nombres.
+       Si no existen, esta sección se oculta sola. -->
+  <section class="block" id="capturas" style="padding-top:0">
+    <div class="wrap">
+      <h2>Así se ve el prototipo</h2>
+      <div class="shots">
+        <figure>
+          <img src="img/pantalla-inicio.png" alt="Pantalla de inicio de First Aid Tech en MIT App Inventor, con un botón por cada zona del cuerpo">
+          <figcaption>Pantalla de inicio: el usuario elige la zona afectada.</figcaption>
+        </figure>
+        <figure>
+          <img src="img/bloques.png" alt="Bloques de programación de MIT App Inventor que abren la pantalla de cada zona del cuerpo">
+          <figcaption>Bloques: cada botón abre la pantalla de su zona.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="status block" id="estado">
+    <div class="wrap">
+      <h2>Estado del proyecto</h2>
+      <p class="lead">Hoy es un prototipo que funciona. Esto es lo que ya está hecho y lo que sigue.</p>
+      <div class="cols">
+        <div>
+          <h3>Lo que ya funciona</h3>
+          <ul>
+            <li>App hecha en MIT App Inventor</li>
+            <li>Guía para 10 zonas del cuerpo</li>
+            <li>Cálculo de dosis según el peso</li>
+            <li>Captura de edad, peso y alergias</li>
+            <li>Envío automático de los datos a una hoja de cálculo</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Lo que sigue</h3>
+          <ul>
+            <li>Revisar los contenidos y las dosis con un médico</li>
+            <li>Pasar la app a Flutter o Kotlin</li>
+            <li>Modo sin internet</li>
+            <li>Botón para llamar al 911</li>
+            <li>Alerta automática de alergias</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="aviso">
+    <div class="wrap">
+      <div class="notice">
+        <h2>Antes de usarla</h2>
+        <p>First Aid Tech es un prototipo académico. Sus contenidos y dosis todavía no están validados por un médico, así que no debe usarse para decidir un tratamiento.</p>
+        <p>No sustituye la atención médica. <strong class="sos">En una emergencia, llama al 911.</strong></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Proyecto PAIF de Emilio Turribiates González, Ingeniería Mecatrónica, Universidad Anáhuac México.</p>
+    <p><a href="https://github.com/emilioturridm">Más proyectos en GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+  // Si falta una captura, se oculta; si faltan las dos, se oculta toda la sección.
+  (function () {
+    var section = document.getElementById('capturas');
+    if (!section) return;
+    var figures = section.querySelectorAll('figure');
+    var left = figures.length;
+    function drop(fig) {
+      if (fig.hidden) return;
+      fig.hidden = true;
+      left -= 1;
+      if (left === 0) section.hidden = true;
+    }
+    figures.forEach(function (fig) {
+      var img = fig.querySelector('img');
+      img.addEventListener('error', function () { drop(fig); });
+      if (img.complete && img.naturalWidth === 0) drop(fig);
+    });
+  })();
+</script>
+</body>
+</html>
